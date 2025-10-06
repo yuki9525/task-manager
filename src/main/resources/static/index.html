@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>タスクマネージャー</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    .container { max-width: 600px; margin: auto; }
+    #task-list { list-style: none; padding: 0; }
+    .task-item { background: #f4f4f4; margin: 10px 0; padding: 15px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+    .task-title { font-weight: bold; }
+    .task-completed { text-decoration: line-through; color: gray; }
+    .form-section { margin-top: 20px; }
+    #new-task-form input, #new-task-form button { padding: 8px; margin-right: 5px; }
+    .delete-btn { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>タスクマネージャー</h1>
+
+  <div class="form-section">
+    <form id="new-task-form">
+      <input type="text" id="task-title-input" placeholder="新しいタスクのタイトル" required>
+      <input type="text" id="task-description-input" placeholder="説明 (任意)">
+      <button type="submit">追加</button>
+    </form>
+  </div>
+
+  <h2>タスク一覧</h2>
+  <ul id="task-list">
+  </ul>
+</div>
+
+<script>
+  const API_URL = '/api/tasks';
+  const taskList = document.getElementById('task-list');
+  const newTaskForm = document.getElementById('new-task-form');
+
+  // タスク一覧を取得して表示する
+  async function fetchTasks() {
+    const response = await fetch(API_URL);
+    const tasks = await response.json();
+    taskList.innerHTML = '';
+    tasks.forEach(task => {
+      const li = document.createElement('li');
+      li.className = 'task-item';
+      li.innerHTML = `
+                <span class="${task.completed ? 'task-completed' : ''}">${task.title}</span>
+                <button class="delete-btn" data-id="${task.id}">削除</button>
+            `;
+      li.querySelector('.delete-btn').addEventListener('click', () => deleteTask(task.id));
+      li.addEventListener('click', () => updateTask(task));
+      taskList.appendChild(li);
+    });
+  }
+
+  // 新しいタスクを追加する
+  async function addTask(event) {
+    event.preventDefault();
+    const title = document.getElementById('task-title-input').value;
+    const description = document.getElementById('task-description-input').value;
+    const newTask = { title, description, completed: false };
+
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTask)
+    });
+    document.getElementById('task-title-input').value = '';
+    document.getElementById('task-description-input').value = '';
+    fetchTasks();
+  }
+
+  // タスクの状態を更新する
+  async function updateTask(task) {
+    task.completed = !task.completed;
+    await fetch(`${API_URL}/${task.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(task)
+    });
+    fetchTasks();
+  }
+
+  // タスクを削除する
+  async function deleteTask(id) {
+    await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+    fetchTasks();
+  }
+
+  // ページ読み込み時にタスクを取得
+  document.addEventListener('DOMContentLoaded', fetchTasks);
+  newTaskForm.addEventListener('submit', addTask);
+</script>
+</body>
+</html>

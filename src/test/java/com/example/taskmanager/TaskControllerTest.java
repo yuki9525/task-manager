@@ -1,7 +1,9 @@
 package com.example.taskmanager;
 
 import com.example.taskmanager.entity.Task;
+import com.example.taskmanager.repository.TaskRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach; // 追加
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -24,6 +26,14 @@ class TaskControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired // 追加
+    private TaskRepository taskRepository;
+
+    @BeforeEach // 追加
+    void setUp() {
+        taskRepository.deleteAll();
+    }
 
     @Test
     void shouldPerformCrudOperationsForTasks() throws Exception {
